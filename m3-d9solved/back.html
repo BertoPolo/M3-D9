@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+    integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous" />
+
+  <style>
+    .navbar {
+      background-color: #131921;
+    }
+
+    #loader .overlay {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      height: 100vh;
+      width: 100vw;
+      background-color: #000000c2
+    }
+
+    #loader .spinner-grow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+    }
+  </style>
+  <!--
+          
+
+
+            You are building the new Amazon.
+            This time you are also responsible for the back office.
+            THIS is you CRUD endpoint
+            https://striveschool-api.herokuapp.com/api/product/
+            The product model is 
+            {
+                "_id": "5d318e1a8541744830bef139", //SERVER GENERATED
+                "name": "app test 1",  //REQUIRED
+                "description": "somthing longer", //REQUIRED
+                "brand": "nokia", //REQUIRED
+                "imageUrl": "https://drop.ndtv.com/TECH/product_database/images/2152017124957PM_635_nokia_3310.jpeg?downsize=*:420&output-quality=80", //REQUIRED
+                "price": 100, //REQUIRED
+                "userId": "admin", //SERVER GENERATED
+                "createdAt": "2019-07-19T09:32:10.535Z", //SERVER GENERATED
+                "updatedAt": "2019-07-19T09:32:10.535Z", //SERVER GENERATED
+                "__v": 0 //SERVER GENERATED
+            }
+            #---------------------------------------------------------------#
+            EVERY REST API CALL SHOULD BE AUTHENTICATED. 
+            Every request to the API should use Token Based Authentication to secure access to the contents.
+            You can get your token by registering on: strive.school/studentlogin
+            Authorization: Bearer ###########
+            Where ######### is the access_token returned by the endpoint.
+            #---------------------------------------------------------------#
+            Today you have to implement:
+            - A backoffice page, where you can insert the product by specifying the parameters
+            - A front page, where the user can see the available products
+            ------ N.B. ------
+            Tokens duration is set to 14 days. Whenever you'll need to obtain a new one you can send the following request:
+            
+            POST https://striveschool-api.herokuapp.com/api/account/login
+            {
+                "username": "testusername@yourmail.com",
+                "password":"pass"
+            }   
+        -->
+  <title>Amazon</title>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-light">
+    <a class="navbar-brand">
+      <img src="./logo.png" height="36px" />
+    </a>
+    <a class="text-light" href="/">Home</a>
+  </nav>
+  <div class="container">
+    <h1 id="page-title" class="mt-5">Add Product</h1>
+    <hr />
+    <form>
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input required class="form-control" id="name" placeholder="Iphone 11" />
+      </div>
+
+      <div class="form-group">
+        <label for="brand">Brand</label>
+        <input required class="form-control" id="brand" placeholder="Apple" />
+      </div>
+
+      <div class="form-group">
+        <label for="price">Price</label>
+        <input required type="number" class="form-control" id="price" placeholder="1€" />
+      </div>
+
+      <div class="form-group">
+        <label for="imageUrl">Image URL</label>
+        <input required class="form-control" id="imageUrl" value="http://placehold.it/300x400"
+          placeholder="http://placehold.it/300x400" />
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea required class="form-control" id="description" rows="3"></textarea>
+      </div>
+
+      <div class="form-group d-flex justify-content-end">
+        <button id="delete-btn" type="button" class="d-none btn btn-danger mr-auto w-25" onclick="deleteProduct()">
+          <ion-icon name="trash-outline"></ion-icon>
+        </button>
+        <button type="reset" class="btn btn-outline-dark mr-2 w-25">
+          Reset
+        </button>
+        <button type="submit" class="btn btn-warning mr-2 w-25">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="loader">
+    <div class="overlay"></div>
+    <div class="spinner-grow text-warning" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/ionicons@5.4.0/dist/ionicons.js"></script>
+
+  <script>
+
+    const params = new URLSearchParams(location.search)
+    const id = params.get('id')
+
+    const BASE_URL = "https://striveschool-api.herokuapp.com/api/product/";
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      Authorization:
+        "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MDdmZjFiNWIxZjBmYjAwMTVkOTE2ZjAiLCJpYXQiOjE2MTkwMDI0MDEsImV4cCI6MTYyMDIxMjAwMX0.LU37ADHpqz6urlAZokWdIqH52UenuThHVfTILSV0EYA",
+    });
+
+    const method = id ? "PUT" : "POST"
+
+    const postProduct = (product, callback) => {
+      const endpoint = id ? BASE_URL + id : BASE_URL
+
+      fetch(endpoint, {
+        headers,
+        method,
+        body: JSON.stringify(product),
+      })
+        .then((res) => res.json())
+        .then((data) => callback(null, data))
+        .catch((error) => callback(error, null));
+    };
+
+    const formOnSubmit = function (e) {
+      e.preventDefault();
+      const name = document.querySelector("#name").value;
+      const brand = document.querySelector("#brand").value;
+      const imageUrl = document.querySelector("#imageUrl").value;
+      const price = parseInt(document.querySelector("#price").value);
+      const description = document.querySelector("#description").value;
+      const product = { name, brand, imageUrl, price, description };
+      postProduct(product, (err, data) => {
+        if (err) {
+          alert(err.message)
+        } else {
+          e.target.reset();
+          window.location.replace("/");
+        }
+      });
+    };
+
+    async function getProductDetails(id) {
+      setLoading(true)
+      try {
+        const response = await fetch(BASE_URL + id, {
+          headers
+        })
+        const product = await response.json()
+
+        console.log(product)
+        console.log(Object.keys(product))
+
+        Object.keys(product).forEach(key => {
+          const field = document.querySelector(`#${key}`)
+          if (field) field.value = product[key]
+        })
+      } catch (error) {
+        alert(error.message)
+      }
+
+      setLoading(false)
+    }
+
+    async function deleteProduct() {
+      setLoading(true)
+      try {
+        const response = await fetch(BASE_URL + id, { method: 'DELETE', headers })
+
+        if (!response.ok) throw new Error("Failed to delete product")
+
+        alert("All good - product deleted successfully.")
+        location.assign("index.html")
+      } catch (error) {
+        alert(error.message)
+      }
+      setLoading(false)
+    }
+
+    const loader = document.getElementById("loader")
+
+    function setLoading(loading) {
+      if (loading) {
+        loader.classList.remove("d-none")
+      } else {
+        loader.classList.add("d-none")
+      }
+    }
+
+    window.onload = function () {
+      const form = document.querySelector("form");
+      form.onsubmit = formOnSubmit;
+
+      if (id) {
+        document.querySelector("#page-title").innerHTML = "Edit product"
+        document.querySelector("#delete-btn").classList.remove("d-none")
+        getProductDetails(id)
+      }
+
+    };
+  </script>
+  <!-- Option 2: Separate Popper and Bootstrap JS -->
+  <!--
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+    -->
+</body>
+
+</html>
